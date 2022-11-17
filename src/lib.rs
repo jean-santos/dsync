@@ -80,11 +80,29 @@ pub fn generate_code(diesel_schema_file_contents: String, config: GenerationConf
     parser::parse_and_generate_code(diesel_schema_file_contents, &config)
 }
 
-pub fn generate_files(input_diesel_schema_file: PathBuf, output_models_dir: PathBuf, config: GenerationConfig) {
+pub fn generate_files(input_diesel_schema_file: PathBuf, output_models_dir: PathBuf, config: GenerationConfig, table_filter: Option<String>) {
     let input = input_diesel_schema_file;
     let output_dir = output_models_dir;
 
-    let generated = generate_code(std::fs::read_to_string(input).expect("Could not read schema file."), config).expect("An error occurred.");
+    let mut generated = generate_code(std::fs::read_to_string(input).expect("Could not read schema file."), config).expect("An error occurred.");
+
+    generated = match table_filter {
+        Some(filter) => {
+            let tables_name: Vec<&str> = filter.split(',').collect();
+            let result = generated
+                .iter()
+                .filter(|&generated_item| tables_name.iter().any(|table_name| table_name == &generated_item.name.to_string()))
+                .cloned()
+                .collect::<Vec<ParsedTableMacro>>();
+
+            if result.len() == 0 {
+                panic!("Table not found!");
+            }
+
+            result
+        }
+        None => generated,
+    };
 
     if !output_dir.exists() {
         std::fs::create_dir(&output_dir).expect(&format!("Could not create directory '{:#?}'", output_dir));
