@@ -37,9 +37,9 @@ impl<'a> TableOptions<'a> {
         }
     }
 
-    pub fn tsync(self) -> Self {
+    pub fn tsync(self, tsync : bool) -> Self {
         Self {
-            tsync: Some(true),
+            tsync: Some(tsync),
             ..self
         }
     }
